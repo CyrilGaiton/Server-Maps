@@ -46,7 +46,6 @@ public class Test {
 //        metierDAO.create(new Metier(0, metier2s));
 
 //        Metier m = metierDAO.find(0);
-//        System.out.println(m.getMetier2()[1].getLol());
 
     }
 }
