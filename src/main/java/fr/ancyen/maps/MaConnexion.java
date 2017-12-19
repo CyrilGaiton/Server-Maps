@@ -33,8 +33,11 @@ public class MaConnexion implements Runnable {
                 // on switch en fonction du premier string
                 String s = (String) ois.readObject();
 
-                if (s.equals("getEvenement")) {
-                    Integer idEvenement = (Integer) ois.readObject();
+                if (s.equals("checkUser")) {
+                    String email = (String) ois.readObject();
+                    String password = (String) ois.readObject();
+                    System.out.println("email + password" + email + " " + password);
+                    oos.writeObject(1);
                 } else if (s.equals("coucou cyril")) {
                     System.out.println("JKVJHVJYFCHGVKHGCKHCYTCFHGCFKG");
 
