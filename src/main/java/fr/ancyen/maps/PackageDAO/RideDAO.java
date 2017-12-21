@@ -16,9 +16,9 @@ public class RideDAO extends DAO<Ride>{
         try {
             PreparedStatement prepare = this.connect
                     .prepareStatement(
-                            "INSERT INTO ride VALUES(?, ?, ?, ? ,?, ? ,? ,?, ?, ?, ?)"
+                            "INSERT INTO ride VALUES(?, ?, ?, ? ,?, ? ,? ,?, ?, ?, ?, ?)"
                     );
-            prepare.setInt(1, ride.getId());
+            prepare.setInt(1, count()+1);
             prepare.setString(2, ride.getIdOrganizer());
             prepare.setString(3, ride.getDeparturePlace());
             prepare.setString(4, ride.getDepartureDate());
@@ -29,6 +29,7 @@ public class RideDAO extends DAO<Ride>{
             prepare.setBytes(9, toByteArray(ride.getPositions()));
             prepare.setBytes(10, toByteArray(ride.getWaypoints()));
             prepare.setBytes(11, toByteArray(ride.getAutorisedEmails()));
+            prepare.setString(12, ride.getState());
 
             prepare.executeUpdate();
 
@@ -62,7 +63,8 @@ public class RideDAO extends DAO<Ride>{
                         result.getString("duration"),
                         toPositions(result.getBytes("positions")),
                         toWaypoints(result.getBytes("waypoints")),
-                        toStrings(result.getBytes("autorisedEmails"))
+                        toStrings(result.getBytes("autorisedEmails")),
+                        result.getString("state")
                 );
 
         } catch (SQLException e) {
@@ -106,39 +108,59 @@ public class RideDAO extends DAO<Ride>{
         }
     }
 
-    public Ride[] getWithEmail(String email) {
-        Ride[] retour = null;
-        List<Ride> rides = new ArrayList<Ride>();
+    public ResultSet getAll() {
+        ResultSet result = null;
         try {
-            ResultSet result = this.connect
+
+            result = this.connect
                     .createStatement()
                     .executeQuery(
-                            "SELECT * FROM ride WHERE idOrganiser = " + email
+                            "SELECT * FROM RIDE"
                     );
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public Ride[] getWithEmail(String email) {
+        List<Ride> rides = new ArrayList<>();
+        ResultSet result = getAll();
+        try {
             while (result.next()) {
-                rides.add(new Ride(
-                        result.getInt("idRide"),
-                        email,
-                        result.getString("departurePlace"),
-                        result.getString("departureDate"),
-                        result.getString("departureHour"),
-                        result.getString("arrivalPlace"),
-                        result.getString("distance"),
-                        result.getString("duration"),
-                        toPositions(result.getBytes("positions")),
-                        toWaypoints(result.getBytes("waypoints")),
-                        toStrings(result.getBytes("autorisedEmails"))
-                ));
+                String[] emails = toStrings(result.getBytes("autorisedEmails"));
+                boolean find = false;
+
+                for (String s : emails
+                        ) {
+                    if (s.equals(email)) find = true;
+                }
+                if (find) {
+                    rides.add(new Ride(
+                            result.getInt("idRide"),
+                            result.getString("idOrganiser"),
+                            result.getString("departurePlace"),
+                            result.getString("departureDate"),
+                            result.getString("departureHour"),
+                            result.getString("arrivalPlace"),
+                            result.getString("distance"),
+                            result.getString("duration"),
+                            toPositions(result.getBytes("positions")),
+                            toWaypoints(result.getBytes("waypoints")),
+                            toStrings(result.getBytes("autorisedEmails")),
+                            result.getString("state")
+                    ));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        retour = new Ride[rides.size()];
+        Ride[] retour = new Ride[rides.size()];
         for (int i=0; i<rides.size(); i++){
             retour[i] = rides.get(i);
         }
-
         return retour;
     }
 
@@ -164,95 +186,104 @@ public class RideDAO extends DAO<Ride>{
     }
 
     public byte[] toByteArray(Object[] o) {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        byte[] b = null;
-        try {
-            ObjectOutputStream oos = new ObjectOutputStream(bout);
-            for (int i=0; i<o.length; i++){
-                oos.writeObject(o[i]);
+        if (o != null) {
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            byte[] b = null;
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream(bout);
+                for (int i = 0; i < o.length; i++) {
+                    oos.writeObject(o[i]);
+                }
+                b = bout.toByteArray();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            b = bout.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
+            return b;
         }
-        return b;
+        return null;
     }
 
     public Position[] toPositions(byte[] b) {
-        ByteArrayInputStream binp = new ByteArrayInputStream(b);
-        List<Position> positions = new ArrayList<Position>();
-        try {
-            ObjectInputStream ois = new ObjectInputStream(binp);
-            boolean boucle = true;
-            while (boucle){
-                try {
-                    positions.add((Position) ois.readObject());
+        if (b != null) {
+            ByteArrayInputStream binp = new ByteArrayInputStream(b);
+            List<Position> positions = new ArrayList<Position>();
+            try {
+                ObjectInputStream ois = new ObjectInputStream(binp);
+                boolean boucle = true;
+                while (boucle) {
+                    try {
+                        positions.add((Position) ois.readObject());
+                    } catch (EOFException e) {
+                        boucle = false;
+                    }
                 }
-                catch (EOFException e){
-                    boucle = false;
-                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            Position[] p = new Position[positions.size()];
+            for (int i = 0; i < positions.size(); i++) {
+                p[i] = positions.get(i);
+            }
+            return p;
         }
-        Position[] p = new Position[positions.size()];
-        for (int i=0; i<positions.size(); i++){
-            p[i] = positions.get(i);
-        }
-        return p;
+        return null;
     }
 
     public Waypoint[] toWaypoints(byte[] b) {
-        ByteArrayInputStream binp = new ByteArrayInputStream(b);
-        List<Waypoint> waypoints = new ArrayList<Waypoint>();
-        try {
-            ObjectInputStream ois = new ObjectInputStream(binp);
-            boolean boucle = true;
-            while (boucle){
-                try {
-                    waypoints.add((Waypoint) ois.readObject());
+        if (b != null) {
+            ByteArrayInputStream binp = new ByteArrayInputStream(b);
+            List<Waypoint> waypoints = new ArrayList<Waypoint>();
+            try {
+                ObjectInputStream ois = new ObjectInputStream(binp);
+                boolean boucle = true;
+                while (boucle) {
+                    try {
+                        waypoints.add((Waypoint) ois.readObject());
+                    } catch (EOFException e) {
+                        boucle = false;
+                    }
                 }
-                catch (EOFException e){
-                    boucle = false;
-                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            Waypoint[] w = new Waypoint[waypoints.size()];
+            for (int i = 0; i < waypoints.size(); i++) {
+                w[i] = waypoints.get(i);
+            }
+            return w;
         }
-        Waypoint[] w = new Waypoint[waypoints.size()];
-        for (int i=0; i<waypoints.size(); i++){
-            w[i] = waypoints.get(i);
-        }
-        return w;
+        return null;
     }
 
     public String[] toStrings(byte[] b) {
-        ByteArrayInputStream binp = new ByteArrayInputStream(b);
-        List<String> strings = new ArrayList<String>();
-        try {
-            ObjectInputStream ois = new ObjectInputStream(binp);
-            boolean boucle = true;
-            while (boucle){
-                try {
-                    strings.add((String) ois.readObject());
+        if (b != null) {
+            ByteArrayInputStream binp = new ByteArrayInputStream(b);
+            List<String> strings = new ArrayList<String>();
+            try {
+                ObjectInputStream ois = new ObjectInputStream(binp);
+                boolean boucle = true;
+                while (boucle) {
+                    try {
+                        strings.add((String) ois.readObject());
+                    } catch (EOFException e) {
+                        boucle = false;
+                    }
                 }
-                catch (EOFException e){
-                    boucle = false;
-                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            String[] s = new String[strings.size()];
+            for (int i = 0; i < strings.size(); i++) {
+                s[i] = strings.get(i);
+            }
+            return s;
         }
-        String[] s = new String[strings.size()];
-        for (int i=0; i<strings.size(); i++){
-            s[i] = strings.get(i);
-        }
-        return s;
+        return null;
     }
 }

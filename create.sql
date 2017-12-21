@@ -20,6 +20,7 @@ CREATE TABLE RIDE(
   positions BYTEA,
   waypoints BYTEA,
   autorisedEmails BYTEA,
+  state VARCHAR(50),
   PRIMARY KEY (idRide),
   FOREIGN KEY (idOrganiser) REFERENCES USER(email)
 );
@@ -27,16 +28,16 @@ CREATE TABLE RIDE(
 DROP TABLE IF EXISTS STATISTICS;
 CREATE TABLE STATISTICS (
   idRide INT,
-  idOrganiser VARCHAR(50),
+  idUser VARCHAR(50),
   timedPositions BYTEA,
-  PRIMARY KEY (idRide, idOrganiser),
+  PRIMARY KEY (idRide, idUser),
   FOREIGN KEY (idRide) REFERENCES RIDE(idRide),
-  FOREIGN KEY (idOrganiser) REFERENCES USER(email)
+  FOREIGN KEY (idUser) REFERENCES USER(email)
 );
 
 
 INSERT INTO USER VALUES ('jd@gmail.com', 'mdplol', 'jean', 'dupont');
 INSERT INTO USER VALUES ('fd@gmail.com', 'mdplol2', 'francois', 'durand');
-INSERT INTO RIDE (idRide, idOrganiser, departurePlace, departureDate, departureHour, arrivalPlace, distance, duration)
-VALUES (0, 'fd@gmail.com', 'Toulon, France', '12 mai', '10h30', 'La Seyne',
-        '10km', '1h25min');
+-- INSERT INTO RIDE (idRide, idOrganiser, departurePlace, departureDate, departureHour, arrivalPlace, distance, duration)
+-- VALUES (0, 'fd@gmail.com', 'Toulon, France', '12 mai', '10h30', 'La Seyne',
+--         '10km', '1h25min');

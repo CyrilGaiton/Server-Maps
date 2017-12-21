@@ -4,6 +4,7 @@ import fr.ancyen.maps.PackageDAO.RideDAO;
 import fr.ancyen.maps.PackageDAO.StatisticsDAO;
 import fr.ancyen.maps.PackageDAO.UserDAO;
 import fr.masterdapm.ancyen.model.Ride;
+import fr.masterdapm.ancyen.model.Statistics;
 import fr.masterdapm.ancyen.model.User;
 
 import java.io.IOException;
@@ -42,23 +43,51 @@ public class Facade{
         rideDAO.create(ride);
     }
 
-    public void getRidesWithEmail(ObjectInputStream ois, ObjectOutputStream oos){
-        String email = null;
+    public void addStatistics(ObjectInputStream ois){
+        Statistics statistics = null;
         try {
-            email = (String) ois.readObject();
+            statistics = (Statistics) ois.readObject();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
+        statisticsDAO.create(statistics);
+    }
+
+    public void gatStatisticsWithEmail(ObjectInputStream ois, ObjectOutputStream oos){
+        String email = null;
+        try {
+            email = (String) ois.readObject();
+        Statistics[] statistics = statisticsDAO.getWithEmail(email);
+        for (Statistics s:statistics
+                ) {
+                oos.writeObject("statistics");
+                oos.writeObject(s);
+        }
+            oos.writeObject("close");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void getRidesWithEmail(ObjectInputStream ois, ObjectOutputStream oos){
+        String email = null;
+        try {
+            email = (String) ois.readObject();
         Ride[] rides = rideDAO.getWithEmail(email);
         for (Ride r:rides
                 ) {
-            try {
+                oos.writeObject("ride");
                 oos.writeObject(r);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        }
+            oos.writeObject("close");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
     }
 

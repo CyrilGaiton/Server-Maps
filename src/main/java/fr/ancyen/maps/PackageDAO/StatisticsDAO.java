@@ -47,7 +47,7 @@ public class StatisticsDAO extends DAO<Statistics> {
                 retour = new Statistics(
                         idRide,
                         idUser,
-                        toTimedPositions(result.getBytes("firstname"))
+                        toTimedPositions(result.getBytes("timedPositions"))
                 );
 
         } catch (SQLException e) {
@@ -93,6 +93,37 @@ public class StatisticsDAO extends DAO<Statistics> {
         }
     }
 
+    public Statistics[] getWithEmail(String email) {
+        Statistics[] retour = null;
+        List<Statistics> statistics = new ArrayList<>();
+        try {
+            ResultSet result = this.connect
+                    .createStatement()
+                    .executeQuery(
+                            "SELECT * FROM statistics WHERE idUser = " + "'" + email + "'"
+                    );
+            if(result.first())
+                statistics.add(
+                        new Statistics(
+                                result.getInt("idRide"),
+                                email,
+                                toTimedPositions(result.getBytes("timedPositions"))
+                        ));
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        retour = new Statistics[statistics.size()];
+        for (int i=0; i<statistics.size(); i++){
+            retour[i] = statistics.get(i);
+        }
+
+        return retour;
+
+    }
+
+
     public int count(){
         int c = -1;
         try {
@@ -115,43 +146,48 @@ public class StatisticsDAO extends DAO<Statistics> {
     }
 
     public byte[] toByteArray(Object[] o) {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        byte[] b = null;
-        try {
-            ObjectOutputStream oos = new ObjectOutputStream(bout);
-            for (int i=0; i<o.length; i++){
-                oos.writeObject(o[i]);
+        if (o != null) {
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            byte[] b = null;
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream(bout);
+                for (int i = 0; i < o.length; i++) {
+                    oos.writeObject(o[i]);
+                }
+                b = bout.toByteArray();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            b = bout.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
+            return b;
         }
-        return b;
+        return null;
     }
 
     public TimedPosition[] toTimedPositions(byte[] b) {
-        ByteArrayInputStream binp = new ByteArrayInputStream(b);
-        List<TimedPosition> timedPositions = new ArrayList<TimedPosition>();
-        try {
-            ObjectInputStream ois = new ObjectInputStream(binp);
-            boolean boucle = true;
-            while (boucle){
-                try {
-                    timedPositions.add((TimedPosition) ois.readObject());
+        if (b!= null) {
+            ByteArrayInputStream binp = new ByteArrayInputStream(b);
+            List<TimedPosition> timedPositions = new ArrayList<TimedPosition>();
+            try {
+                ObjectInputStream ois = new ObjectInputStream(binp);
+                boolean boucle = true;
+                while (boucle) {
+                    try {
+                        timedPositions.add((TimedPosition) ois.readObject());
+                    } catch (EOFException e) {
+                        boucle = false;
+                    }
                 }
-                catch (EOFException e){
-                    boucle = false;
-                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            TimedPosition[] p = new TimedPosition[timedPositions.size()];
+            for (int i = 0; i < timedPositions.size(); i++) {
+                p[i] = timedPositions.get(i);
+            }
+            return p;
         }
-        TimedPosition[] p = new TimedPosition[timedPositions.size()];
-        for (int i=0; i<timedPositions.size(); i++){
-            p[i] = timedPositions.get(i);
-        }
-        return p;
+        return null;
     }
 }

@@ -1,5 +1,7 @@
 package fr.ancyen.maps;
 
+import fr.masterdapm.ancyen.model.Statistics;
+
 import java.io.*;
 import java.net.*;
 import java.sql.SQLException;
@@ -36,10 +38,26 @@ public class MaConnexion implements Runnable {
                 if (s.equals("checkUser")) {
                     String email = (String) ois.readObject();
                     String password = (String) ois.readObject();
-                    System.out.println("email + password" + email + " " + password);
                     oos.writeObject(1);
-                } else if (s.equals("coucou cyril")) {
-                    System.out.println("JKVJHVJYFCHGVKHGCKHCYTCFHGCFKG");
+
+                } else if (s.equals("addUser")) {
+                    facade.addUser(ois);
+
+                } else if (s.equals("addRide")) {
+                    facade.addRide(ois);
+
+                } else if (s.equals("addStatistics")) {
+                    facade.addStatistics(ois);
+
+                } else if (s.equals("getStatisticsWithEmail")) {
+                    facade.gatStatisticsWithEmail(ois, oos);
+
+                } else if (s.equals("getRidesWithEmail")) {
+                    facade.getRidesWithEmail(ois, oos);
+
+                } else if (s.equals("test serial")) {
+                    Statistics statistics = (Statistics) ois.readObject();
+                    System.out.println(statistics.getTimedPositions()[1].getTime());
 
                 } else if (s.equals("close")) {
                     running= false;
@@ -47,12 +65,9 @@ public class MaConnexion implements Runnable {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            running = false;
         } catch (ClassNotFoundException e) {
             e.printStackTrace();}
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
 
         stop();
     }
@@ -61,7 +76,7 @@ public class MaConnexion implements Runnable {
 
 
         try {
-            System.out.println("Connexion fermée: " + client.getLocalAddress());
+            System.out.println("Connexion fermée: " + client.getRemoteSocketAddress());
             client.close();
         } catch (IOException e) {
             System.out.println("Exception a la fermeture d'une connexion"+e);

@@ -37,8 +37,11 @@ public class Test {
 //        TimedPosition[] timedPositions = {new TimedPosition(1, 2, 3, "10h30"),
 //                new TimedPosition(4, 5, 6, "10h32")};
 //
-//        StatisticsDAO statisticsDAO = new StatisticsDAO();
-//        statisticsDAO.create(new Statistics(0, "jd@gmail.com", timedPositions));
+        StatisticsDAO statisticsDAO = new StatisticsDAO();
+//        statisticsDAO.create(new Statistics(0, "jd@gmail.com", null));
+        Object[] o = {0, "jd@gmail.com"};
+        Statistics s = statisticsDAO.find(o);
+        System.out.println(s.getTimedPositions());
 
 
 //        MetierDAO metierDAO = new MetierDAO();

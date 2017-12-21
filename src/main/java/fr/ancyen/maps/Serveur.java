@@ -8,7 +8,7 @@ public class Serveur {
 
     private static int port = 5700;
 
-    private static Facade facade = null;//new Facade();
+    private static Facade facade = new Facade();
 
 
     public static void main(String[] args) {
